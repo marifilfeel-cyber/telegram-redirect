@@ -5,46 +5,55 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Перенаправление во внешний браузер</title>
 
-    <!-- Подключаем официальный скрипт Telegram WebApp (нужен для метода openLink) -->
     <script src="https://telegram.org/js/telegram-web-app.js"></script>
 
     <script>
-        // Ждём полной загрузки страницы и скрипта Telegram
         window.addEventListener('load', function() {
-            // 1. Пытаемся использовать официальный метод Telegram WebApp (работает на iOS и Android)
-            if (window.Telegram && window.Telegram.WebApp && typeof Telegram.WebApp.openLink === 'function') {
-                Telegram.WebApp.openLink(window.location.href, { try_instant_view: false });
+            let redirected = false;
+
+            // Надёжная проверка на Telegram in-app браузер
+            const isTelegramInApp = 
+                (window.Telegram && window.Telegram.WebApp) ||
+                (typeof window.TelegramWebview !== 'undefined') ||
+                navigator.userAgent.toLowerCase().includes('telegram');
+
+            if (!isTelegramInApp) {
+                // Не в Telegram — показываем обычный контент
+                showMainContent();
                 return;
             }
 
-            // 2. Дополнительный хак для Android (Intent URL) — если первый способ не сработал
+            const currentUrl = window.location.href;
+
+            // 1. Хак для Android — самый надёжный в 2025 году
             const ua = navigator.userAgent.toLowerCase();
             const isAndroid = ua.includes('android');
-            const isTelegramInApp = ua.includes('telegram') || window.TelegramWebview;
 
-            if (isAndroid && isTelegramInApp) {
-                const currentUrl = window.location.href;
-                // Убираем протокол http/https
+            if (isAndroid) {
                 const hostPath = currentUrl.replace(/^https?:\/\//, '');
-                const intentUrl = `intent://${hostPath}#Intent;scheme=https;package=com.android.chrome;end`;
-
-                // Пытаемся открыть через intent
+                const intentUrl = `intent://${hostPath}#Intent;scheme=https;end`;
                 window.location.href = intentUrl;
-
-                // Если через 1 секунду не перенаправило — покажем кнопку ручного открытия
-                setTimeout(showManualButton, 1000);
-                return;
+                redirected = true;
             }
 
-            // Если ничего не сработало — показываем кнопку
-            showManualButton();
+            // 2. Для iOS и если Android не сработал — официальный метод
+            if (window.Telegram && window.Telegram.WebApp && typeof Telegram.WebApp.openLink === 'function') {
+                Telegram.WebApp.openLink(currentUrl);
+                redirected = true;
+            }
+
+            // Ждём 2 секунды — если не перенаправило, показываем кнопку
+            setTimeout(function() {
+                if (!redirected || document.visibilityState === 'visible') {
+                    showManualButton();
+                }
+            }, 2000);
         });
 
-        // Функция для показа кнопки ручного открытия во внешнем браузере
         function showManualButton() {
             document.body.innerHTML = `
                 <div style="
-                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+                    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
                     text-align: center;
                     padding: 40px 20px;
                     background: #f0f0f0;
@@ -54,27 +63,37 @@
                     justify-content: center;
                     align-items: center;
                 ">
-                    <h2>Откройте в браузере</h2>
-                    <p>Telegram блокирует автоматическое открытие.<br>Нажмите кнопку ниже, чтобы продолжить во внешнем браузере.</p>
+                    <h2>Откройте в внешнем браузере</h2>
+                    <p>Автоматическое перенаправление не сработало.<br>Нажмите кнопку ниже.</p>
                     <a href="${window.location.href}" target="_blank" rel="noopener" style="
                         display: inline-block;
                         background: #0088cc;
                         color: white;
-                        padding: 14px 28px;
+                        padding: 16px 32px;
                         font-size: 18px;
-                        border-radius: 8px;
+                        border-radius: 12px;
                         text-decoration: none;
                         margin-top: 20px;
                     ">Открыть во внешнем браузере</a>
                 </div>
             `;
         }
+
+        function showMainContent() {
+            // Здесь ваш основной контент сайта (если нужно что-то показывать вне Telegram)
+            document.body.innerHTML = `
+                <div style="text-align:center; padding:50px; font-family:sans-serif;">
+                    <h1>Добро пожаловать!</h1>
+                    <p>Это ваш сайт. В Telegram вы будете автоматически перенаправлены во внешний браузер.</p>
+                </div>
+            `;
+        }
     </script>
 </head>
 <body style="margin:0; background:#fff;">
-    <!-- Можно добавить лоадер или сообщение, пока идёт перенаправление -->
     <div style="text-align:center; padding:50px; font-family:sans-serif; color:#666;">
         <p>Перенаправляем во внешний браузер...</p>
+        <p>Подождите пару секунд.</p>
     </div>
 </body>
 </html>
