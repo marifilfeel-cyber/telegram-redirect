@@ -1,29 +1,20 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Переход...</title>
-    <!-- Подключаем официальный скрипт Telegram WebApp -->
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <meta charset="utf-8">
+    <title>Переадресация...</title>
     <script>
-        const targetUrl = 'https://go.mavrtracktor.com?userId=b186e26ed1cc5be3bd4fd0bddec376c2ef5e97201a8d267599c1d0839eff9d9c';  // ← Твоя целевая ссылка здесь!
-
-        // Ждём загрузки WebApp API
-        window.addEventListener('load', () => {
-            if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
-                Telegram.WebApp.ready();  // Важно: инициализируем
-
-                // Открываем во внешнем браузере (try_instant_view: false отключает Instant View)
-                Telegram.WebApp.openLink(targetUrl, { try_instant_view: false });
-            } else {
-                // Запасной: если не в Telegram или API не загрузилось — обычный редирект
-                window.location.href = targetUrl;
-            }
-        });
+        // Детект Telegram in-app browser
+        if (window.TelegramWebview || /Telegram/.test(navigator.userAgent)) {
+            // Для Android: intent заставляет открыть в Chrome/внешнем
+            const realUrl = 'https://go.mavrtracktor.com?userId=b186e26ed1cc5be3bd4fd0bddec376c2ef5e97201a8d267599c1d0839eff9d9c';  // твоя настоящая ссылка
+            const intentUrl = `intent://${realUrl.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;end`;
+            window.location.href = intentUrl;
+        } else {
+            // Если не в TG — обычный редирект
+            window.location.href = 'https://example.com';
+        }
     </script>
 </head>
-<body>
-    <p>Переход на сайт... Если ничего не происходит, <a href="https://example.com">нажмите здесь</a>.</p>
-</body>
+<body>Подожди, открываем в нормальном браузере...</body>
 </html>
