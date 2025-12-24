@@ -9,48 +9,61 @@
 
     <script>
         window.addEventListener('load', function() {
-            let redirected = false;
-
-            // Надёжная проверка на Telegram in-app браузер
-            const isTelegramInApp = 
-                (window.Telegram && window.Telegram.WebApp) ||
-                (typeof window.TelegramWebview !== 'undefined') ||
-                navigator.userAgent.toLowerCase().includes('telegram');
-
-            if (!isTelegramInApp) {
-                // Не в Telegram — показываем обычный контент
+            // Проверяем, уже перенаправили ли (параметр ext=1)
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.has('ext')) {
+                // Уже во внешнем — показываем основной контент
                 showMainContent();
                 return;
             }
 
-            const currentUrl = window.location.href;
+            // Надёжная проверка на Telegram in-app
+            const isTelegramInApp = 
+                (window.Telegram && window.Telegram.WebApp) ||
+                (typeof window.TelegramWebview !== 'undefined') ||
+                /telegram/i.test(navigator.userAgent);
 
-            // 1. Хак для Android — самый надёжный в 2025 году
+            if (!isTelegramInApp) {
+                showMainContent();
+                return;
+            }
+
+            // Текущий URL + параметр для предотвращения loop
+            let baseUrl = window.location.href;
+            if (!baseUrl.includes('?')) {
+                baseUrl += '?ext=1';
+            } else {
+                baseUrl += '&ext=1';
+            }
+
+            let redirected = false;
+
+            // 1. Официальный метод (хорошо работает на iOS, иногда на Android)
+            if (window.Telegram && window.Telegram.WebApp && typeof Telegram.WebApp.openLink === 'function') {
+                Telegram.WebApp.openLink(baseUrl);
+                redirected = true;
+            }
+
+            // 2. Intent-хак для Android (самый надёжный)
             const ua = navigator.userAgent.toLowerCase();
             const isAndroid = ua.includes('android');
 
             if (isAndroid) {
-                const hostPath = currentUrl.replace(/^https?:\/\//, '');
+                const hostPath = baseUrl.replace(/^https?:\/\//, '');
                 const intentUrl = `intent://${hostPath}#Intent;scheme=https;end`;
                 window.location.href = intentUrl;
                 redirected = true;
             }
 
-            // 2. Для iOS и если Android не сработал — официальный метод
-            if (window.Telegram && window.Telegram.WebApp && typeof Telegram.WebApp.openLink === 'function') {
-                Telegram.WebApp.openLink(currentUrl);
-                redirected = true;
-            }
-
-            // Ждём 2 секунды — если не перенаправило, показываем кнопку
+            // Fallback: если через 2 сек не ушло — кнопка
             setTimeout(function() {
                 if (!redirected || document.visibilityState === 'visible') {
-                    showManualButton();
+                    showManualButton(baseUrl);
                 }
             }, 2000);
         });
 
-        function showManualButton() {
+        function showManualButton(url) {
             document.body.innerHTML = `
                 <div style="
                     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
@@ -63,9 +76,9 @@
                     justify-content: center;
                     align-items: center;
                 ">
-                    <h2>Откройте в внешнем браузере</h2>
+                    <h2>Откройте во внешнем браузере</h2>
                     <p>Автоматическое перенаправление не сработало.<br>Нажмите кнопку ниже.</p>
-                    <a href="${window.location.href}" target="_blank" rel="noopener" style="
+                    <a href="${url}" target="_blank" rel="noopener" style="
                         display: inline-block;
                         background: #0088cc;
                         color: white;
@@ -80,11 +93,12 @@
         }
 
         function showMainContent() {
-            // Здесь ваш основной контент сайта (если нужно что-то показывать вне Telegram)
+            // Здесь твой основной контент сайта
             document.body.innerHTML = `
                 <div style="text-align:center; padding:50px; font-family:sans-serif;">
                     <h1>Добро пожаловать!</h1>
-                    <p>Это ваш сайт. В Telegram вы будете автоматически перенаправлены во внешний браузер.</p>
+                    <p>Это ваш сайт в полноценном внешнем браузере.</p>
+                    <!-- Добавь сюда свой реальный контент -->
                 </div>
             `;
         }
