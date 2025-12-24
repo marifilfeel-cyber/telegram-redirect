@@ -1,53 +1,36 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Redirect</title>
+<script>
+// Функция для обнаружения встроенного браузера Telegram
+function isTelegramInAppBrowser() {
+  // Для Android
+  if (/Android/i.test(navigator.userAgent) && typeof window.TelegramWebview !== 'undefined') {
+    return true;
+  }
+  // Для iOS
+  if (/iPhone|iPad|iPod/i.test(navigator.userAgent) && typeof window.TelegramWebviewProxy !== 'undefined') {
+    return true;
+  }
+  return false;
+}
 
-    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+if (isTelegramInAppBrowser()) {
+  // Показываем сообщение пользователю (рекомендуется, чтобы он понял, что происходит)
+  alert("Для правильной работы сайта откройте его в обычном браузере (Chrome/Safari). Сейчас вы будете перенаправлены.");
 
-    <script>
-        window.addEventListener('load', function() {
-            // Если уже во внешнем браузере (параметр ext=1) — ничего не делаем
-            const urlParams = new URLSearchParams(window.location.search);
-            if (urlParams.has('ext')) return;
+  // Способ 1: Используем Chrome Intent (работает хорошо на Android)
+  const currentUrl = encodeURIComponent(window.location.href);
+  const intentUrl = `intent://${window.location.host}${window.location.pathname}${window.location.search}#Intent;scheme=https;package=com.android.chrome;end`;
+  
+  window.location.href = intentUrl;
 
-            // Проверяем, что мы внутри Telegram in-app браузера
-            const isTelegramInApp = 
-                (window.Telegram && window.Telegram.WebApp) ||
-                (typeof window.TelegramWebview !== 'undefined') ||
-                /telegram/i.test(navigator.userAgent);
-
-            if (!isTelegramInApp) return;
-
-            // Целевая ссылка — ЗАМЕНИ ЭТУ НА СВОЮ
-            let targetUrl = "https://go.mavrtracktor.com?userId=b186e26ed1cc5be3bd4fd0bddec376c2ef5e97201a8d267599c1d0839eff9d9c";  
-
-            // Добавляем параметр, чтобы избежать зацикливания
-            if (!targetUrl.includes('?')) {
-                targetUrl += '?ext=1';
-            } else {
-                targetUrl += '&ext=1';
-            }
-
-            // 1. Официальный метод Telegram (iOS + часть Android)
-            if (window.Telegram && window.Telegram.WebApp && typeof Telegram.WebApp.openLink === 'function') {
-                Telegram.WebApp.openLink(targetUrl);
-                return;
-            }
-
-            // 2. Intent-хак для Android
-            const ua = navigator.userAgent.toLowerCase();
-            if (ua.includes('android')) {
-                const hostPath = targetUrl.replace(/^https?:\/\//, '');
-                const intentUrl = `intent://${hostPath}#Intent;scheme=https;end`;
-                window.location.href = intentUrl;
-            }
-        });
-    </script>
-</head>
-<body>
-    <!-- Пустое тело — ничего не показываем -->
-</body>
-</html>
+  // Способ 2: Альтернатива — универсальный редирект через googlechrome:// или просто сообщение
+  // Если первый не сработает, можно добавить fallback:
+  setTimeout(() => {
+    // Для iOS лучше просто показать инструкцию, т.к. нет надёжного intent
+    if (/iPhone|iPad|iPod/i.test(navigator.userAgent)) {
+      alert("Пожалуйста, нажмите на три точки (⋮) в правом верхнем углу и выберите «Открыть в Safari» или скопируйте ссылку и откройте в обычном браузере.");
+    } else {
+      window.location.href = "googlechrome:" + window.location.href; // Попытка открыть в Chrome
+    }
+  }, 1000);
+}
+</script>
