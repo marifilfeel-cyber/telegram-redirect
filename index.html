@@ -4,28 +4,26 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Переход...</title>
+    <!-- Подключаем официальный скрипт Telegram WebApp -->
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <script>
-        // Основной редирект на целевой сайт
-        const targetUrl = 'https://go.mavrtracktor.com?userId=b186e26ed1cc5be3bd4fd0bddec376c2ef5e97201a8d267599c1d0839eff9d9c';  // ← Замени на свою ссылку!
+        const targetUrl = 'https://go.mavrtracktor.com?userId=b186e26ed1cc5be3bd4fd0bddec376c2ef5e97201a8d267599c1d0839eff9d9c';  // ← Твоя целевая ссылка здесь!
 
-        // Детект встроенного браузера Telegram (in-app browser)
-        if (navigator.userAgent.includes('Telegram') || window.TelegramWebviewProxy !== undefined) {
-            // Для Android: используем Chrome intent (часто заставляет открыть внешний браузер)
-            const host = targetUrl.replace(/^https?:\/\//, '');
-            const intentUrl = `intent://${host}#Intent;scheme=https;package=com.android.chrome;end`;
-            window.location.href = intentUrl;
+        // Ждём загрузки WebApp API
+        window.addEventListener('load', () => {
+            if (typeof Telegram !== 'undefined' && Telegram.WebApp) {
+                Telegram.WebApp.ready();  // Важно: инициализируем
 
-            // Запасной вариант: если intent не сработает, обычный редирект
-            setTimeout(() => {
+                // Открываем во внешнем браузере (try_instant_view: false отключает Instant View)
+                Telegram.WebApp.openLink(targetUrl, { try_instant_view: false });
+            } else {
+                // Запасной: если не в Telegram или API не загрузилось — обычный редирект
                 window.location.href = targetUrl;
-            }, 500);
-        } else {
-            // Если не в Telegram — обычный редирект
-            window.location.href = targetUrl;
-        }
+            }
+        });
     </script>
 </head>
 <body>
-    <p>Переход на сайт... Если не произошло автоматически, <a href="https://example.com">нажмите здесь</a>.</p>
+    <p>Переход на сайт... Если ничего не происходит, <a href="https://example.com">нажмите здесь</a>.</p>
 </body>
 </html>
