@@ -1,5 +1,9 @@
 // Source - https://stackoverflow.com/a
-// Posted by James M
+// Posted by 0xManjeet
 // Retrieved 2025-12-24, License - CC BY-SA 4.0
 
-<script src="https://telegram.org/js/telegram-web-app.js"></script> <button onclick="javascript:Telegram.WebApp.openLink('https://www.google.com/');">Click Me</button>
+   if (window.TelegramWebview) {
+        const url = window.location.href;
+        const chromeUrl = `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;end`;
+        window.location.href = chromeUrl;
+    }
